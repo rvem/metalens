@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import json
 from metalens import *
 
 pi = np.pi
@@ -16,22 +17,23 @@ def get_points(subject: Metalens):
     return np.array(points)
 
 
-def draw_points(a):
-    plt.plot([[x[0]] for x in a], [[x[1]] for x in a], 'ro', markersize=3)
+def draw_points(a, focus, it, random_seed, number_of_particles):
+    plt.plot([[x[0]] for x in a], [[x[1]] for x in a], 'ro', markersize=1)
     plt.axis([-21000, 21000, -21000, 21000])
-    plt.title('dipoles')
+    plt.title('lens, focus: ({}, {}) after {} steps,\n random_seed {}, number_of_dipoles {}'
+                .format(focus[0], focus[1], it, random_seed, number_of_particles))
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
 
 
-def draw_colormap(x_min, x_max, z_min, z_max, intensity):
+def draw_colormap(x_min, x_max, z_min, z_max, intensity, focus):
     mx = np.max(intensity)
     mn = np.min(intensity)
     c = plt.imshow(np.transpose(intensity), extent=[x_min, x_max, z_max, z_min], cmap=plt.get_cmap('hot'), vmax=mx,
                    vmin=mn)
-    plt.title('energy distribution')
+    plt.title('energy distribution ' + 'lens, focus: ({}, {})'.format(focus[0], focus[1]))
     plt.xlabel('X')
     plt.ylabel('Z')
     color_bar = plt.colorbar(c, ticks=[mn, mx])

@@ -6,11 +6,6 @@ import numpy as np
 
 import time
 
-X = np.arange(-200, 300, 100)
-Z = np.arange(6000, 10000, 50)
-Y = np.array([0])
-len_X = len(X)
-len_Z = len(Z)
 pi = np.pi
 
 EPS = 1
@@ -39,25 +34,57 @@ starts = np.array([0] * 15)
 chi = 4989276.07580808 + 1j * 15803067.7684502
 
 
-def main():
-    np.random.seed(322)
-    current_subject = Metalens(rings, starts, nums)
+def main(new_focus, random_seed):
+    X = np.array([0])
+    Z = np.arange(1000, 10100, 100)
+    Y = np.array([0])
+    current_subject = gen_random_metalens(10)
     it = 0
-    current_focus = calc(current_subject)
-    expecting = (0, 7550)
-    while it < 1000 and distance(current_focus, expecting) > EPS:
+    expecting = (0, new_focus)
+    trampling_steps = 0
+    lowest_score = +np.inf
+    while it < 5000 and lowest_score > EPS:
         new = mutate(current_subject)
-        focus = calc(new)
-        if distance(focus, expecting) < distance(current_focus, expecting):
-            current_focus = focus
+        new_focus = calc(new, X, Y, Z, False)
+        new.score = distance(new_focus, expecting)
+        new.focus = new_focus
+        new.random_seed = random_seed
+        if new.score < lowest_score:
+            trampling_steps = 0
+            lowest_score = new.score
             current_subject = new
+        else:
+            trampling_steps += 1
+        if trampling_steps > 100:
+            print("generate new random individual after trampling")
+            current_subject = gen_random_metalens(10)
+            trampling_steps = 0
+            lowest_score = distance(calc(current_subject, X, Y, Z, False), expecting)
         it += 1
-        print(it, focus, distance(focus, expecting))
-        print()
-    draw_points(get_points(current_subject))
+        if not it % 50:
+            print("epoch: {}, lowest score: {}".format(it, lowest_score))
+    current_subject.it = it
+    draw_lens(current_subject)
+    export_as_json(current_subject)
+
+    return current_subject
 
 
-def calc(ring_subject: Metalens):
+def draw_heatmap(subject: Metalens):
+    X = np.arange(-2000, 2100, 100)
+    Z = np.arange(1000, 10050, 50)
+    Y = np.array([0])
+    print("drawing colormap")
+    draw_colormap(-2000, 2000, 1000, 10000, calc(subject, X, Y, Z, True), subject.focus)
+
+
+def draw_lens(subject: Metalens):
+    draw_points(get_points(subject), subject.focus, subject.it, subject.random_seed, sum(subject.nums))
+
+
+def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
+    len_X = len(X)
+    len_Z = len(Z)
     dipoles = [Dipole(x, E_in * chi) for x in get_points(ring_subject)]
     n = len(dipoles)
     psi_0_2 = np.zeros((len_X, len_Z, 3), dtype=complex)
@@ -88,19 +115,25 @@ def calc(ring_subject: Metalens):
             psi_m[i, j] = psi_m[i, j] + s_m
 
     intensity = np.zeros((len_X, len_Z))
-    intensity_m = np.zeros((len_X, len_Z))
     for i in range(len_X):
         for j in range(len_Z):
             for t in range(3):
                 intensity[i, j] += np.abs(psi_2[i, j, t]) ** 2
-                intensity_m[i, j] += np.abs(psi_m[i, j, t]) ** 2
+                intensity[i, j] += np.abs(psi_m[i, j, t]) ** 2
 
-    m = np.transpose(intensity + intensity_m)
+    m = np.transpose(intensity)
     max_z, max_x = np.unravel_index(m.argmax(), m.shape)
-    return X[max_x], Z[max_z]
+    if get_intensity:
+        return intensity
+    else:
+        return X[max_x], Z[max_z]
 
 
 if __name__ == '__main__':
-    start_time = time.time()
-    main()
-    print(time.time() - start_time)
+    for i in range(6000, 6100, 100):
+        for j in range(322, 333):
+            np.random.seed(j)
+            print("building lens with focus (0, {})".format(i))
+            start_time = time.time()
+            main(i, j)
+            print(time.time() - start_time)
