@@ -60,9 +60,9 @@ def mutate(subject: Metalens):
         new_subject.starts[i] = np.random.uniform(0, 2 * np.pi)
     elif mutation == 'number':
         print("mutate number of particles")
-        new_num = np.random.randint(0, 500)
+        new_num = np.random.randint(1, 500)
         while get_dist(new_num, new_subject.rads[i]) < 300:
-            new_num = np.random.randint(0, 500)
+            new_num = np.random.randint(1, 500)
         new_subject.nums[i] = new_num
     elif mutation == 'remove':
         print("remove ring")
