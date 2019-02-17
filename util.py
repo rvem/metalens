@@ -19,7 +19,7 @@ def get_points(subject: Metalens):
 def draw_points(a, focus, it):
     plt.plot([[x[0]] for x in a], [[x[1]] for x in a], 'ro', markersize=1)
     plt.axis([-21000, 21000, -21000, 21000])
-    plt.title('lens, focus: ({}, {}) after {} steps'.format(focus[0], focus[1], it))
+    plt.title('lens, focus: ({}, {}) after {} epochs'.format(focus[0], focus[1], it))
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.gca().set_aspect('equal', adjustable='box')
