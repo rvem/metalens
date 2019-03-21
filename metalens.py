@@ -5,6 +5,11 @@ from copy import copy
 mutations = ['radius', 'angle', 'number']
 true_or_false = [True, False]
 
+MAX_NUM = 100
+MIN_RAD = 1000
+MAX_RAD = 15000
+MIN_DIST = 300
+
 
 class Metalens:
     def __init__(self, rads, starts, nums):
@@ -21,42 +26,68 @@ class Metalens:
 
 
 def gen_random_metalens(n):
-    rads = np.array([np.random.randint(1000, 15000) for _ in range(n)])
-    starts = np.array([np.random.uniform(0, 2 * np.pi) for _ in range(n)])
-    nums = np.array([0] * n)
+    rads = np.array([np.random.randint(MIN_RAD, MAX_RAD) for _ in range(n)])
     for i in range(n):
-        new_num = np.random.randint(0, 500)
-        while get_dist(new_num, rads[i]) < 1000:
-            new_num = np.random.randint(0, 500)
+        new_rad = np.random.randint(MIN_RAD, MAX_RAD)
+        while get_dist_to_closest_ring(new_rad, rads, i) < MIN_DIST:
+            new_rad = np.random.randint(MIN_RAD, MAX_RAD)
+        rads[i] = new_rad
+    starts = np.array([np.random.uniform(0, 2 * np.pi) for _ in range(n)])
+    nums = np.array([np.random.randint(0, MAX_NUM) for _ in range(n)])
+    for i in range(n):
+        new_num = np.random.randint(0, MAX_NUM)
+        while get_dist(new_num, rads[i]) < MIN_DIST:
+            new_num = np.random.randint(0, MAX_NUM)
         nums[i] = new_num
     return Metalens(rads, starts, nums)
 
 
-def crossover(subject1: Metalens, subject2: Metalens):
-    i = np.random.randint(0, len(subject1.rads))
-    child1 = Metalens(rads=np.append(subject1.rads[:i], subject2.rads[i:]),
-                      nums=np.append(subject1.nums[:i], subject2.nums[i:]),
-                      starts=np.append(subject1.starts[:i], subject2.starts[i:]))
-    child2 = Metalens(rads=np.append(subject2.rads[:i], subject1.rads[i:]),
-                      nums=np.append(subject2.nums[:i], subject1.nums[i:]),
-                      starts=np.append(subject2.starts[:i], subject1.starts[i:]))
-    if np.random.choice(true_or_false, 1, p=[0.3, 0.7]):
-        child1 = mutate(child1)
-    if np.random.choice(true_or_false, 1, p=[0.3, 0.7]):
-        child2 = mutate(child2)
-    return child1, child2
+def breed(first: Metalens, second: Metalens):
+    lenses = [first, second]
+    rads = []
+    starts = []
+    nums = []
+    for i in range(len(first.rads)):
+        ind = np.random.randint(0, 2)
+        rads.append(lenses[ind].rads[i])
+        starts.append(lenses[ind].starts[i])
+        nums.append(lenses[ind].nums[i])
+    res = Metalens(rads, starts, nums)
+    return res
 
 
-def breed(population: [Metalens]):
-    np.random.shuffle(population)
-    n = len(population)
-    subjects1 = population[:n // 2]
-    subjects2 = population[n // 2:]
-    assert len(subjects1) == len(subjects2)
-    for i in range(n // 2):
-        child1, child2 = crossover(subjects1[i], subjects2[i])
-        population = np.concatenate((population, [child1, child2]))
-    return population
+def is_alive(lens: Metalens):
+    n = len(lens.rads)
+    for i in range(n):
+        if get_dist_to_closest_ring(lens.rads[i], lens.rads, i) < MIN_DIST:
+            return False
+    for i in range(n):
+        if get_dist(lens.nums[i], lens.rads[i]) < MIN_DIST:
+            return False
+    if sum(lens.nums) > MAX_NUM * n:
+        return False
+    return True
+
+
+def breed_n(population: [Metalens], n):
+    res = []
+    while len(res) <= n:
+        lenses = np.random.choice(population, 2)
+        new_subject = breed(lenses[0], lenses[1])
+        if is_alive(new_subject):
+            res.append(new_subject)
+    return res
+
+
+def mutate_n(population: [Metalens], n):
+    lenses_to_mutate = np.random.choice(population, n)
+    res = []
+    for lens in lenses_to_mutate:
+        new_lens = mutate(lens)
+        while not is_alive(new_lens):
+            new_lens = mutate(lens)
+        res.append(new_lens)
+    return res
 
 
 def get_dist_to_closest_ring(new_rad, rads, index):
@@ -80,43 +111,24 @@ def simpler(lens1: Metalens, lens2: Metalens):
 
 def mutate(subject: Metalens):
     new_subject = copy(subject)
-    # mutation = np.random.choice(mutations, 1, p=[0.3, 0.3, 0.3, 0.05, 0.05])
     mutation = np.random.choice(mutations)
-    # if mutation == 'add':
-    #     print("add new ring")
-    #     new_rad = np.random.randint(1000, 15000)
-    #     while get_dist_to_closest_ring(new_rad, new_subject.rads, -1) < 300:
-    #         new_rad = np.random.randint(1000, 15000)
-    #     new_angle = np.random.uniform(0, 2 * np.pi)
-    #     new_num = np.random.randint(0, 500)
-    #     while get_dist(new_num, new_rad) < 300:
-    #         new_num = np.random.randint(0, 500)
-    #     np.append(new_subject.rads, new_rad)
-    #     np.append(new_subject.starts, new_angle)
-    #     np.append(new_subject.nums, new_num)
-    #     return new_subject
     i = np.random.randint(0, len(subject.rads))
     # print("mutate ring", i, end=" ")
     if mutation == 'radius':
         # print("mutate radius")
-        new_rad = np.random.randint(1000, 15000)
-        while get_dist_to_closest_ring(new_rad, new_subject.rads, i) < 300 or get_dist(new_subject.nums[i],
-                                                                                       new_rad) < 300:
-            new_rad = np.random.randint(1000, 15000)
+        new_rad = np.random.randint(MIN_RAD, MAX_RAD)
+        while get_dist_to_closest_ring(new_rad, new_subject.rads, i) < MIN_DIST or get_dist(new_subject.nums[i],
+                                                                                            new_rad) < MIN_DIST:
+            new_rad = np.random.randint(MIN_RAD, MAX_RAD)
         new_subject.rads[i] = new_rad
     elif mutation == 'angle':
         # print("mutate initial angle")
         new_subject.starts[i] = np.random.uniform(0, 2 * np.pi)
     elif mutation == 'number':
         # print("mutate number of particles")
-        new_num = np.random.randint(0, 500)
-        while get_dist(new_num, new_subject.rads[i]) < 300:
-            new_num = np.random.randint(0, 500)
+        new_num = np.random.randint(0, MAX_NUM)
+        while get_dist(new_num, new_subject.rads[i]) < MIN_DIST:
+            new_num = np.random.randint(0, MAX_NUM)
         new_subject.nums[i] = new_num
-    # elif mutation == 'remove':
-    #     print("remove ring")
-    #     np.delete(new_subject.rads, i)
-    #     np.delete(new_subject.starts, i)
-    #     np.delete(new_subject.nums, i)
 
     return new_subject

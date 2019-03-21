@@ -16,10 +16,11 @@ def get_points(subject: Metalens):
     return np.array(points)
 
 
-def draw_points(a, focus, it):
+def draw_points(a, focus, it, random_seed, n):
     plt.plot([[x[0]] for x in a], [[x[1]] for x in a], 'ro', markersize=1)
     plt.axis([-21000, 21000, -21000, 21000])
-    plt.title('lens, focus: ({}, {}) after {} epochs'.format(focus[0], focus[1], it))
+    plt.title('lens, focus: ({}, {}) after {} epochs,\n random_seed {}, number of dipoles {}'
+              .format(focus[0], focus[1], it, random_seed, n))
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.gca().set_aspect('equal', adjustable='box')

@@ -36,8 +36,12 @@ chi = 4989276.07580808 + 1j * 15803067.7684502
 population_size = 20
 lens_size = 10
 
+elitary = 4
+breeded = 12
+mutated = 4
 
-def main(new_focus):
+
+def main(new_focus, random_seed):
     X = np.array([0])
     Z = np.arange(1000, 10100, 100)
     Y = np.array([0])
@@ -45,25 +49,28 @@ def main(new_focus):
     population = [gen_random_metalens(lens_size) for _ in range(population_size)]
     print("random population generated")
     it = 0
+    trampling_steps = 0
+    lowest_score = +np.inf
     while it < 1000 and population[0].score > EPS:
         it += 1
-        population = breed(population)
         calc_population_scores(population, expecting, X, Y, Z)
         population.sort()
-        population = population[:population_size]
-        print("epoch: {}, lowest score: {}".format(it, population[0].score))
-    # while it < 1000 and distance(current_focus, expecting) > EPS:
-    #     new = mutate(current_subject)
-    #     focus = calc(new, X, Y, Z, False)
-    #     if distance(focus, expecting) < distance(current_focus, expecting) or \
-    #             (distance(focus, expecting) == distance(current_focus, expecting) and simpler(new, current_subject)):
-    #         current_focus = focus
-    #         current_subject = new
-    #     it += 1
-    #     print(it, focus, distance(focus, expecting))
-    #     print()
+        if population[0].score >= lowest_score:
+            trampling_steps += 1
+        else:
+            trampling_steps = 0
+            lowest_score = population[0].score
+        print("epoch: {}, lowest score: {}".format(it, lowest_score))
+        if trampling_steps > 20:
+            print("generate new random population after trampling")
+            new_population = [gen_random_metalens(lens_size) for _ in range(population_size)]
+            it = 0
+            trampling_steps = 0
+        else:
+            new_population = population[:elitary] + breed_n(population, breeded) + mutate_n(population, mutated)
+        population = new_population
     current_subject = population[0]
-    draw_points(get_points(current_subject), expecting, it)
+    draw_points(get_points(current_subject), expecting, it, random_seed, sum(current_subject.nums))
     X = np.arange(-2000, 2100, 100)
     Z = np.arange(1000, 10050, 50)
     print("drawing colormap")
@@ -125,8 +132,8 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
 
 if __name__ == '__main__':
     np.random.seed(322)
-    for i in range(5300, 6000, 100):
+    for i in range(322, 333, 1):
         print("building lens with focus (0, {})".format(i))
         start_time = time.time()
-        main(i)
+        main(6000, i)
         print(time.time() - start_time)
