@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.image as img
 import json
 from metalens import *
 
@@ -18,14 +19,16 @@ def get_points(subject: Metalens):
 
 
 def draw_points(a, focus, it, random_seed, number_of_particles):
-    plt.plot([[x[0]] for x in a], [[x[1]] for x in a], 'ro', markersize=1)
+    line, = plt.plot([[x[0]] for x in a], [[x[1]] for x in a], 'ro', markersize=1)
     plt.axis([-21000, 21000, -21000, 21000])
     plt.title('lens, focus: ({}, {}) after {} steps,\n random_seed {}, number_of_dipoles {}'
-                .format(focus[0], focus[1], it, random_seed, number_of_particles))
+              .format(focus[0], focus[1], it, random_seed, number_of_particles))
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.gca().set_aspect('equal', adjustable='box')
+    a = plt.gca()
+    a.set_aspect('equal', adjustable='box')
     plt.show()
+    return [line]
 
 
 def draw_colormap(x_min, x_max, z_min, z_max, intensity, focus):

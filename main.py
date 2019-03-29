@@ -3,7 +3,7 @@ from dipole import *
 from util import *
 from metalens import *
 import numpy as np
-
+import matplotlib.animation as animation
 import time
 
 pi = np.pi
@@ -33,16 +33,21 @@ starts = np.array([0] * 15)
 
 chi = 4989276.07580808 + 1j * 15803067.7684502
 
+images = []
+
 
 def main(new_focus, random_seed):
     X = np.array([0])
     Z = np.arange(1000, 10100, 100)
     Y = np.array([0])
     current_subject = gen_random_metalens(10)
+    current_subject.it = 0
+    current_subject.focus = calc(current_subject, X, Y, Z, False)
     it = 0
     expecting = (0, new_focus)
     trampling_steps = 0
     lowest_score = +np.inf
+    images.append(draw_lens(current_subject))
     while it < 5000 and lowest_score > EPS:
         new = mutate(current_subject)
         new_focus = calc(new, X, Y, Z, False)
@@ -53,6 +58,9 @@ def main(new_focus, random_seed):
             trampling_steps = 0
             lowest_score = new.score
             current_subject = new
+            current_subject.focus = new_focus
+            current_subject.it = it
+            images.append(draw_lens(current_subject))
         else:
             trampling_steps += 1
         if trampling_steps > 100:
@@ -79,7 +87,7 @@ def draw_heatmap(subject: Metalens):
 
 
 def draw_lens(subject: Metalens):
-    draw_points(get_points(subject), subject.focus, subject.it, subject.random_seed, sum(subject.nums))
+    return draw_points(get_points(subject), subject.focus, subject.it, subject.random_seed, sum(subject.nums))
 
 
 def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
@@ -129,11 +137,28 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
         return X[max_x], Z[max_z]
 
 
+fig = plt.figure()
+ax = plt.axes(xlim=(0, 2), ylim=(-2, 2))
+line, = ax.plot([], [], lw=2)
+
+
+def animate(ind):
+    line.set_data(images[ind])
+    return line,
+
+
+def init():
+    line.set_data([], [])
+    return line,
+
+
 if __name__ == '__main__':
     for i in range(6000, 6100, 100):
-        for j in range(322, 333):
-            np.random.seed(j)
-            print("building lens with focus (0, {})".format(i))
-            start_time = time.time()
-            main(i, j)
-            print(time.time() - start_time)
+        # for j in range(322, 333):
+        np.random.seed(322)
+        print("building lens with focus (0, {})".format(i))
+        start_time = time.time()
+        main(i, 322)
+        print(time.time() - start_time)
+        ani = animation.ArtistAnimation(fig, images, interval=500, repeat=False)
+        ani.save("lens_evolution.mp4", writer='imagemagick')

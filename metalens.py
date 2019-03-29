@@ -37,11 +37,11 @@ def gen_random_metalens(n):
             new_rad = np.random.randint(MIN_RAD, MAX_RAD)
         rads[i] = new_rad
     starts = np.array([np.random.uniform(0, 2 * np.pi) for _ in range(n)])
-    nums = np.array([np.random.randint(0, MAX_NUM) for _ in range(n)])
+    nums = np.array([0] * n)
     for i in range(n):
-        new_num = np.random.randint(0, MAX_NUM)
+        new_num = np.random.randint(1, MAX_NUM)
         while get_dist(new_num, rads[i]) < MIN_DIST:
-            new_num = np.random.randint(0, MAX_NUM)
+            new_num = np.random.randint(1, MAX_NUM)
         nums[i] = new_num
     return Metalens(rads, starts, nums)
 
@@ -95,9 +95,9 @@ def mutate(subject: Metalens):
         new_subject.starts[i] = np.random.uniform(0, 2 * np.pi)
     elif mutation == 'number':
         # print("mutate number of particles")
-        new_num = np.random.randint(0, MAX_NUM)
+        new_num = np.random.randint(1, MAX_NUM)
         while get_dist(new_num, new_subject.rads[i]) < MIN_DIST:
-            new_num = np.random.randint(0, MAX_NUM)
+            new_num = np.random.randint(1, MAX_NUM)
         new_subject.nums[i] = new_num
     if not is_alive(new_subject):
         return mutate(subject)
