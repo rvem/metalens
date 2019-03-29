@@ -1,5 +1,6 @@
 import numpy as np
 from copy import copy
+import jsonpickle
 
 # mutations = ['radius', 'angle', 'number', 'add', 'remove']
 mutations = ['radius', 'angle', 'number']
@@ -17,6 +18,9 @@ class Metalens:
         self.starts = starts
         self.nums = nums
         self.score = np.inf
+        self.focus = (-1, -1)
+        self.random_seed = -1
+        self.it = -1
 
     def __copy__(self):
         return Metalens(copy(self.rads), copy(self.starts), copy(self.nums))
@@ -132,3 +136,15 @@ def mutate(subject: Metalens):
         new_subject.nums[i] = new_num
 
     return new_subject
+
+
+def export_as_json(subject: Metalens):
+    file = open('lens/lens_focus_{}_random_seed_{}.json'.format(subject.focus, subject.random_seed), 'w+')
+    file.write(jsonpickle.encode(subject))
+    file.close()
+
+
+def import_from_json(filepath):
+    file = open(filepath, 'r')
+    return jsonpickle.decode(file.read())
+

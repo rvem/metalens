@@ -70,6 +70,11 @@ def main(new_focus, random_seed):
             new_population = population[:elitary] + breed_n(population, breeded) + mutate_n(population, mutated)
         population = new_population
     current_subject = population[0]
+    current_subject.focus = expecting
+    current_subject.random_seed = random_seed
+    current_subject.score = 0
+    current_subject.it = it
+    export_as_json(current_subject)
     draw_points(get_points(current_subject), expecting, it, random_seed, sum(current_subject.nums))
     X = np.arange(-2000, 2100, 100)
     Z = np.arange(1000, 10050, 50)
