@@ -10,7 +10,7 @@ pi = np.pi
 
 EPS = 1
 # lambda_ = 826.60
-lambda_ = 620
+lambda_ = 775
 r_sph = 100
 
 eps1 = 1
@@ -24,14 +24,13 @@ W_0 = 300000
 
 # polarization vector
 E_in = np.array((np.cos(theta_inc), 0, -np.sin(theta_inc)))
+H_in = np.array((0, 1, 0))
 # wave vector
 w = np.array((k0 * eps1 ** (1 / 2) * np.sin(theta_inc), 0, k0 * eps1 ** (1 / 2) * np.cos(theta_inc)))
 
-rings = np.array([1350, 2350, 4350, 6350, 8350, 9900, 11200, 12450, 13600, 14750])
-nums = np.array([8, 8, 16, 32, 32, 32, 64, 64, 64, 128])
-starts = np.array([0] * 10)
-
-chi = 4989276.07580808 + 1j * 15803067.7684502
+chi, chi_m = get_alphas(lambda_, r_sph)
+# chi = 4989276.07580808 + 1j * 15803067.7684502
+# print(chi, chi_m)
 
 population_size = 20
 lens_size = 10
@@ -47,7 +46,7 @@ def main(new_focus, random_seed):
     Y = np.array([0])
     expecting = (0, new_focus)
     population = [gen_random_metalens(lens_size) for _ in range(population_size)]
-    print("random population generated")
+    print("random population geскааnerated")
     it = 0
     trampling_steps = 0
     lowest_score = +np.inf
@@ -91,7 +90,7 @@ def calc_population_scores(population: [Metalens], expecting, X, Y, Z):
 def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
     len_X = len(X)
     len_Z = len(Z)
-    dipoles = [Dipole(x, E_in * chi) for x in get_points(ring_subject)]
+    dipoles = [Dipole(x, E_in * chi, H_in * chi_m) for x in get_points(ring_subject)]
     n = len(dipoles)
     psi_0_2 = np.zeros((len_X, len_Z, 3), dtype=complex)
     psi_0_m = np.zeros((len_X, len_Z, 3), dtype=complex)
@@ -100,8 +99,8 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
         for j in range(len_Z):
             dop = np.exp(1j * np.dot(w, np.array((X[i], Y[k], Z[j]))))
             psi_0_2[i, j] = dop * E_in
-            # dop_m = np.exp(1j * np.dot(w, np.array((X[i], Y[k], Z[j])))) / k0
-            # psi_0_m[i, j] = dop_m * np.cross(E_in, w)
+            dop_m = np.exp(1j * np.dot(w, np.array((X[i], Y[k], Z[j])))) / k0
+            psi_0_m[i, j] = dop_m * np.cross(E_in, w)
     psi_2 = psi_0_2
     psi_m = psi_0_m
     for i in range(len_X):
@@ -114,8 +113,8 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
                 dipole_y = dipole.vector[1]
                 dipole_z = dipole.vector[2]
                 g = green(X[i], dipole_x, Y[k], dipole_y, Z[j], dipole_z, k1, eps1)
-                # g_m = 1j * k0 * rot_green(X[i], dipole_x, Y[k], dipole_y, Z[j], dipole_z, k1)
-                # s_m += np.dot(g_m, dipole.moment)
+                g_m = 1j * k0 * rot_green(X[i], dipole_x, Y[k], dipole_y, Z[j], dipole_z, k1)
+                s_m += np.dot(g_m, dipole.magnetic)
                 s += np.dot(g, dipole.moment)
             psi_2[i, j] = psi_2[i, j] + s
             psi_m[i, j] = psi_m[i, j] + s_m
@@ -125,7 +124,7 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
         for j in range(len_Z):
             for t in range(3):
                 intensity[i, j] += np.abs(psi_2[i, j, t]) ** 2
-                # intensity[i, j] += np.abs(psi_m[i, j, t]) ** 2
+                intensity[i, j] += np.abs(psi_m[i, j, t]) ** 2
 
     m = np.transpose(intensity)
     max_z, max_x = np.unravel_index(m.argmax(), m.shape)
@@ -135,10 +134,27 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
         return X[max_x], Z[max_z]
 
 
+def kek():
+    rings = np.array(
+        [1350, 2350, 4350, 6350, 8350, 9900, 11200, 12450, 13600, 14750, 15800, 16850, 17900, 18900, 20800])
+    nums = np.array([8, 8, 16, 32, 32, 32, 64, 64, 64, 64, 64, 64, 64, 64, 128])
+    starts = np.array([0] * 15)
+    X = np.array([0])
+    Z = np.arange(1000, 10100, 100)
+    Y = np.array([0])
+    lens = Metalens(rings, starts, nums)
+    lens.focus = calc(lens, X, Y, Z, False)
+    lens.score = 0
+    X = np.arange(-2000, 2100, 100)
+    Z = np.arange(1000, 10100, 100)
+    draw_colormap(-2000, 2000, 1000, 10000, calc(lens, X, Y, Z, True), lens.focus)
+
+
 if __name__ == '__main__':
-    np.random.seed(322)
-    for i in range(322, 333, 1):
-        print("building lens with focus (0, {})".format(i))
-        start_time = time.time()
-        main(6000, i)
-        print(time.time() - start_time)
+    kek()
+#     np.random.seed(322)
+#     for i in range(322, 333, 1):
+#         print("building lens with focus (0, {})".format(i))
+#         start_time = time.time()
+#         main(6000, i)
+#         print(time.time() - start_time)

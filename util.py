@@ -1,7 +1,34 @@
 import matplotlib.pyplot as plt
+from scipy.special import jv, hankel1
 from metalens import *
 
 pi = np.pi
+
+
+def get_alphas(lambda_, r_sph):
+    x = 2 * pi * r_sph / lambda_
+    kk = 2 * pi / lambda_
+    eps = 13.793 + 1j * 0.057
+    m = eps ** (1 / 2)
+    n = 1
+
+    psi_n = (pi * x / 2) ** (1 / 2) * jv(n + 1 / 2, x)
+    psi_n_dir = (1 / 2) * (pi / (2 * x)) ** (1 / 2) * jv(n + 1 / 2, x) + (pi * x / 2) ** (1 / 2) * (
+            jv(n - 1 / 2, x) - ((n + 1 / 2) / x) * jv(n + 1 / 2, x))
+    psi_n_m = (pi * m * x / 2) ** (1 / 2) * jv(n + 1 / 2, m * x)
+    psi_n_dir_m = (1 / 2) * (pi / (2 * m * x)) ** (1 / 2) * jv(n + 1 / 2, m * x) + (pi * m * x / 2) ** (1 / 2) * (
+            jv(n - 1 / 2, m * x) - ((n + 1 / 2) / (m * x)) * jv(n + 1 / 2, m * x))
+    xci_n = (pi * x / 2) ** (1 / 2) * hankel1(n + 1 / 2, x)
+    xci_n_dir = (1 / 2) * (pi / (2 * x)) ** (1 / 2) * hankel1(n + 1 / 2, x) + (pi * x / 2) ** (1 / 2) * (
+            hankel1(n - 1 / 2, x) - ((n + 1 / 2) / x) * hankel1(n + 1 / 2, x))
+
+    a_n = (psi_n * psi_n_dir_m - m * psi_n_m * psi_n_dir) / (xci_n * psi_n_dir_m - m * psi_n_m * xci_n_dir)
+    b_n = (m * psi_n * psi_n_dir_m - psi_n_m * psi_n_dir) / (m * xci_n * psi_n_dir_m - psi_n_m * xci_n_dir)
+
+    alpha_e = 1j * pi * 6 * a_n / (kk ** 3)
+    alpha_m = 1j * pi * 6 * b_n / (kk ** 3)
+
+    return alpha_e, alpha_m
 
 
 def get_points(subject: Metalens):
