@@ -8,7 +8,7 @@ pi = np.pi
 def get_alphas(lambda_, r_sph):
     x = 2 * pi * r_sph / lambda_
     kk = 2 * pi / lambda_
-    eps = 13.793 + 1j * 0.057
+    eps = 15.254 + 1j * 0.172
     m = eps ** (1 / 2)
     n = 1
 
@@ -48,24 +48,34 @@ def draw_points(a, focus, it, random_seed, n):
     plt.axis([-21000, 21000, -21000, 21000])
     plt.title('lens, focus: ({}, {}) after {} epochs,\n random_seed {}, number of dipoles {}'
               .format(focus[0], focus[1], it, random_seed, n))
-    plt.xlabel('X')
-    plt.ylabel('Y')
+    plt.xlabel('X, nm')
+    plt.ylabel('Y, nm')
     plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
 
 
-def draw_colormap(x_min, x_max, z_min, z_max, intensity, focus):
+def draw_colormap(x_min, x_max, z_min, z_max, intensity, type, focus):
     mx = np.max(intensity)
     mn = np.min(intensity)
     c = plt.imshow(np.transpose(intensity), extent=[x_min, x_max, z_max, z_min], cmap=plt.get_cmap('hot'), vmax=mx,
                    vmin=mn)
-    plt.title('energy distribution ' + 'lens, focus: ({}, {})'.format(focus[0], focus[1]))
-    plt.xlabel('X')
-    plt.ylabel('Z')
+    plt.title('energy distribution for {}, '.format(type) + 'lens focus: ({}, {})'.format(focus[0], focus[1]))
+    plt.xlabel('X, nm')
+    plt.ylabel('Z, nm')
     color_bar = plt.colorbar(c, ticks=[mn, mx])
     color_bar.ax.set_yticklabels([mn, mx])
     plt.show()
 
 
 def distance(expected, actual):
-    return ((expected[0] - actual[0]) ** 2 + (expected[1] - actual[1]) ** 2) ** (1 / 2)
+    return ((expected[2][0] - actual[0]) ** 2 + (expected[2][1] - actual[1]) ** 2) ** (1 / 2)
+
+
+def draw_loss_plot(plot_info, dipoles_num, focus):
+    plt.scatter(*zip(*plot_info))
+    plt.plot(*zip(*plot_info), '-o')
+    plt.title('fitness function plot for generating lens with focus: {}\n total dipoles num: {}'.format(focus, dipoles_num))
+    plt.xlabel('epoch')
+    plt.ylabel('score')
+    plt.savefig("plot_{}.png".format(focus))
+    plt.show()

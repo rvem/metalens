@@ -6,7 +6,7 @@ import jsonpickle
 mutations = ['radius', 'angle', 'number']
 true_or_false = [True, False]
 
-MAX_NUM = 100
+MAX_NUM = 50
 MIN_RAD = 1000
 MAX_RAD = 15000
 MIN_DIST = 300
@@ -19,6 +19,8 @@ class Metalens:
         self.nums = nums
         self.score = np.inf
         self.focus = (-1, -1)
+        self.focus_e = (-1, -1)
+        self.focus_m = (-1, -1)
         self.random_seed = -1
         self.it = -1
 
@@ -28,6 +30,8 @@ class Metalens:
     def __lt__(self, other):
         return self.score < other.score
 
+    def __len__(self):
+        return len(self.rads)
 
 def gen_random_metalens(n):
     rads = np.array([np.random.randint(MIN_RAD, MAX_RAD) for _ in range(n)])
@@ -61,11 +65,12 @@ def breed(first: Metalens, second: Metalens):
 
 
 def is_alive(lens: Metalens):
-    n = len(lens.rads)
+    n = len(lens)
+    if min(lens.rads) < MIN_RAD or max(lens.rads) > MAX_RAD:
+        return False
     for i in range(n):
         if get_dist_to_closest_ring(lens.rads[i], lens.rads, i) < MIN_DIST:
             return False
-    for i in range(n):
         if get_dist(lens.nums[i], lens.rads[i]) < MIN_DIST:
             return False
     if sum(lens.nums) > MAX_NUM * n:
