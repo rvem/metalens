@@ -1,4 +1,5 @@
 class Dipole:
-    def __init__(self, vector, moment):
+    def __init__(self, vector, moment, magnetic):
         self.vector = vector
-        self.moment = moment
+        self.electric = moment
+        self.magnetic = magnetic
