@@ -10,6 +10,7 @@ pi = np.pi
 
 EPS = 1
 # lambda_ = 826.60
+# lambda_ = 729
 lambda_ = 620
 r_sph = 100
 
@@ -30,7 +31,6 @@ w = np.array((k0 * eps1 ** (1 / 2) * np.sin(theta_inc), 0, k0 * eps1 ** (1 / 2) 
 
 chi, chi_m = get_alphas(lambda_, r_sph)
 # chi = 4989276.07580808 + 1j * 15803067.7684502
-# print(chi, chi_m)
 
 population_size = 20
 lens_size = 10
@@ -82,12 +82,12 @@ def main(new_focus, random_seed):
     draw_points(get_points(current_subject), expecting, it, random_seed, sum(current_subject.nums))
     X = np.arange(-2000, 2100, 100)
     Z = np.arange(1000, 10100, 100)
-    draw_loss_plot(plot_info, total_calc_number, expecting)
-    # print("drawing colormap")
-    # intensity_e, intensity_m, intensity = calc(current_subject, X, Y, Z, True)
-    # draw_colormap(-2000, 2000, 1000, 10000, intensity_e, "electric", expecting)
-    # draw_colormap(-2000, 2000, 1000, 10000, intensity_m, "magnetic", expecting)
-    # draw_colormap(-2000, 2000, 1000, 10000, intensity, "summary", expecting)
+    # draw_loss_plot(plot_info, total_calc_number, expecting)
+    print("drawing colormap")
+    intensity_e, intensity_m, intensity = calc(current_subject, X, Y, Z, True)
+    draw_colormap(-2000, 2000, 1000, 10000, intensity_e, "electric", expecting)
+    draw_colormap(-2000, 2000, 1000, 10000, intensity_m, "magnetic", expecting)
+    draw_colormap(-2000, 2000, 1000, 10000, intensity, "summary", expecting)
     return current_subject
 
 
@@ -105,8 +105,8 @@ def calc_initial_fields(X, Z):
         for j in range(len_Z):
             dop = np.exp(1j * np.dot(w, np.array((X[i], 0, Z[j]))))
             electric_initial[i, j] = dop * E_in
-            # dop_m = np.exp(1j * np.dot(w, np.array((X[i], 0, Z[j])))) / k0
-            # magnetic_initial[i, j] = dop_m * np.cross(E_in, w)
+            dop_m = np.exp(1j * np.dot(w, np.array((X[i], 0, Z[j])))) / k0
+            magnetic_initial[i, j] = dop_m * np.cross(w, E_in)
     return electric_initial, magnetic_initial
 
 
@@ -125,18 +125,18 @@ def calc_dipoles_fields(particles, X, Z):
                 dipole_x = dipole.vector[0]
                 dipole_y = dipole.vector[1]
                 dipole_z = dipole.vector[2]
-                # electric field contribution
+                # electric dipoles contribution
                 g = green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1, eps1)
                 g_m = -1j * k0 * rot_green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1)
-                e += np.dot(g_m, dipole.electric)
+                m += np.dot(g_m, dipole.electric)
                 e += np.dot(g, dipole.electric)
-                # magnetic field contribution
-                # g = 1j * k0 * rot_green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1)
-                # g_m = green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1, eps1)
-                # m += np.dot(g_m, dipole.magnetic)
-                # m += np.dot(g, dipole.magnetic)
+                # magnetic dipoles contribution
+                g = 1j * k0 * rot_green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1)
+                g_m = green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1, eps1)
+                e += np.dot(g, dipole.magnetic)
+                m += np.dot(g_m, dipole.magnetic)
             electric[i, j] = electric[i, j] + e
-            # magnetic[i, j] = magnetic[i, j] + m
+            magnetic[i, j] = magnetic[i, j] + m
     return electric, magnetic
 
 
@@ -160,6 +160,7 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
     total_calc_number += sum(ring_subject.nums)
     dipoles = [Dipole(x, E_in * chi, H_in * chi_m) for x in get_points(ring_subject)]
     electric, magnetic = calc_initial_fields(X, Z)
+    # electric_d, magnetic_d = np.zeros((len_X, len_Z, 3)), np.zeros((len_X, len_Z, 3))
     electric_d, magnetic_d = calc_dipoles_fields(dipoles, X, Z)
     electric += electric_d
     magnetic += magnetic_d
@@ -169,7 +170,7 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
         for j in range(len_Z):
             for t in range(3):
                 intensity_e[i, j] += np.abs(electric[i, j, t]) ** 2
-                # intensity_m[i, j] += np.abs(magnetic[i, j, t]) ** 2
+                intensity_m[i, j] += np.abs(magnetic[i, j, t]) ** 2
     intensity = intensity_e + intensity_m
     m = np.transpose(intensity)
     m_e = np.transpose(intensity_e)
@@ -184,16 +185,17 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
 
 
 def kek():
-    rings = np.array(
-        [1350, 2350, 4350, 6350, 8350, 9900, 11200, 12450, 13600, 14750, 15800, 16850, 17900, 18900, 20800])
-    nums = np.array([8, 8, 16, 32, 32, 32, 64, 64, 64, 64, 64, 64, 64, 64, 128])
-    starts = np.array([0] * 15)
+    rings = np.array([3000])
+    nums = np.array([24])
+    # nums = np.array([0])
+    starts = np.array([0])
     X = np.array([0])
     Z = np.arange(1000, 10100, 100)
     Y = np.array([0])
     lens = Metalens(rings, starts, nums)
     lens.focus_e, lens.focus_m, lens.focus = calc(lens, X, Y, Z, False)
     lens.score = 0
+    # draw_points(get_points(lens), lens.focus, 0, 0, sum(lens.nums))
     X = np.arange(-2000, 2100, 100)
     Z = np.arange(1000, 10100, 100)
     intensity_e, intensity_m, intensity = calc(lens, X, Y, Z, True)
@@ -203,10 +205,10 @@ def kek():
 
 
 if __name__ == '__main__':
-    # kek()
-    np.random.seed(322)
-    for i in range(3000, 4000, 100):
-        print("building lens with focus (0, {})".format(i))
-        start_time = time.time()
-        main(i, 322)
-        print(time.time() - start_time)
+    kek()
+    # np.random.seed(322)
+    # for i in range(3000, 4000, 100):
+    #     print("building lens with focus (0, {})".format(i))
+    #     start_time = time.time()
+    #     main(i, 322)
+    #     print(time.time() - start_time)
