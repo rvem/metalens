@@ -105,8 +105,8 @@ def calc_initial_fields(X, Z):
         for j in range(len_Z):
             dop = np.exp(1j * np.dot(w, np.array((X[i], 0, Z[j]))))
             electric_initial[i, j] = dop * E_in
-            # dop_m = np.exp(1j * np.dot(w, np.array((X[i], 0, Z[j])))) / k0
-            # magnetic_initial[i, j] = dop_m * np.cross(E_in, w)
+            dop_m = np.exp(1j * np.dot(w, np.array((X[i], 0, Z[j])))) / k0
+            magnetic_initial[i, j] = dop_m * np.cross(w, E_in)
     return electric_initial, magnetic_initial
 
 
@@ -125,18 +125,18 @@ def calc_dipoles_fields(particles, X, Z):
                 dipole_x = dipole.vector[0]
                 dipole_y = dipole.vector[1]
                 dipole_z = dipole.vector[2]
-                # electric field contribution
+                # electric dipoles contribution
                 g = green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1, eps1)
                 g_m = -1j * k0 * rot_green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1)
-                e += np.dot(g_m, dipole.electric)
+                m += np.dot(g_m, dipole.electric)
                 e += np.dot(g, dipole.electric)
-                # magnetic field contribution
-                # g = 1j * k0 * rot_green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1)
-                # g_m = green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1, eps1)
-                # m += np.dot(g_m, dipole.magnetic)
-                # m += np.dot(g, dipole.magnetic)
+                # magnetic dipoles contribution
+                g = 1j * k0 * rot_green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1)
+                g_m = green(X[i], dipole_x, 0, dipole_y, Z[j], dipole_z, k1, eps1)
+                e += np.dot(g, dipole.magnetic)
+                m += np.dot(g_m, dipole.magnetic)
             electric[i, j] = electric[i, j] + e
-            # magnetic[i, j] = magnetic[i, j] + m
+            magnetic[i, j] = magnetic[i, j] + m
     return electric, magnetic
 
 
@@ -169,7 +169,7 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
         for j in range(len_Z):
             for t in range(3):
                 intensity_e[i, j] += np.abs(electric[i, j, t]) ** 2
-                # intensity_m[i, j] += np.abs(magnetic[i, j, t]) ** 2
+                intensity_m[i, j] += np.abs(magnetic[i, j, t]) ** 2
     intensity = intensity_e + intensity_m
     m = np.transpose(intensity)
     m_e = np.transpose(intensity_e)
@@ -198,12 +198,12 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
 
 
 if __name__ == '__main__':
-    np.random.seed(322)
-    for i in range(4000, 6100, 100):
+    for i in range(322, 323, 1):
+        np.random.seed(i)
         # for j in range(322, 333):
         print("building lens with focus (0, {})".format(i))
         start_time = time.time()
-        main(i, 322)
+        main(6000, i)
         print(time.time() - start_time)
         # ani = animation.ArtistAnimation(fig, images, interval=500, repeat=False)
         # ani.save("lens_evolution.mp4", writer='imagemagick')
