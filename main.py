@@ -79,18 +79,15 @@ def main(new_focus, random_seed):
     draw_lens(current_subject)
     draw_loss_plot(plot_info, total_calc_number, expecting)
     export_as_json(current_subject)
-
-    return current_subject
-
-
-def draw_heatmap(subject: Metalens):
     X = np.arange(-2000, 2100, 100)
     Z = np.arange(1000, 10100, 100)
     Y = np.array([0])
-    print("drawing colormap")
-    intensity_e, intensity_m, intensity = calc(subject, X, Y, Z, True)
-    draw_colormap(-2000, 2000, 1000, 10000, intensity, "summary", subject.focus)
+    intensity_e, intensity_m, intensity = calc(current_subject, X, Y, Z, True)
+    draw_colormap(-2, 2, 1, 10, intensity_e, "electric", expecting, random_seed)
+    draw_colormap(-2, 2, 1, 10, intensity_m, "magnetic", expecting, random_seed)
+    draw_colormap(-2, 2, 1, 10, intensity, "summary", expecting, random_seed)
 
+    return current_subject
 
 def draw_lens(subject: Metalens):
     return draw_points(get_points(subject), subject.focus, subject.it, subject.random_seed, sum(subject.nums))
@@ -198,7 +195,7 @@ def calc(ring_subject: Metalens, X, Y, Z, get_intensity: bool):
 
 
 if __name__ == '__main__':
-    for i in range(322, 323, 1):
+    for i in range(322, 333, 1):
         np.random.seed(i)
         # for j in range(322, 333):
         print("building lens with focus (0, {})".format(i))
