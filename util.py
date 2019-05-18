@@ -44,26 +44,29 @@ def get_points(subject: Metalens):
 
 
 def draw_points(a, focus, it, random_seed, n):
-    plt.plot([[x[0]] for x in a], [[x[1]] for x in a], 'ro', markersize=1)
-    plt.axis([-21000, 21000, -21000, 21000])
+    plt.plot([[x[0] / 1000] for x in a], [[x[1] / 1000] for x in a], 'ro', markersize=1)
+    plt.axis([-21, 21, -21, 21])
     plt.title('lens, focus: ({}, {}) after {} epochs,\n random_seed {}, number of dipoles {}'
               .format(focus[0], focus[1], it, random_seed, n))
-    plt.xlabel('X, nm')
-    plt.ylabel('Y, nm')
+    plt.xlabel('X, micron')
+    plt.ylabel('Y, micron')
     plt.gca().set_aspect('equal', adjustable='box')
+    plt.savefig("lens_pic_proceeding/lens_focus_{}_random_seed_{}_it_{}_num_{}.png".format(focus, random_seed, it, n))
     plt.show()
 
 
-def draw_colormap(x_min, x_max, z_min, z_max, intensity, type, focus):
+def draw_colormap(x_min, x_max, z_min, z_max, intensity, type, focus, random_seed):
     mx = np.max(intensity)
     mn = np.min(intensity)
-    c = plt.imshow(np.transpose(intensity), extent=[x_min, x_max, z_max, z_min], cmap=plt.get_cmap('hot'), vmax=mx,
+    intensity = np.fliplr(intensity)
+    c = plt.imshow(np.transpose(intensity), extent=[x_min, x_max, z_min, z_max], cmap=plt.get_cmap('hot'), vmax=mx,
                    vmin=mn)
     plt.title('energy distribution for {}, '.format(type) + 'lens focus: ({}, {})'.format(focus[0], focus[1]))
-    plt.xlabel('X, nm')
-    plt.ylabel('Z, nm')
+    plt.xlabel('X, micron')
+    plt.ylabel('Z, micron')
     color_bar = plt.colorbar(c, ticks=[mn, mx])
     color_bar.ax.set_yticklabels([mn, mx])
+    plt.savefig("heatmaps_proceeding/heatmap_focus_{}_random_seed_{}_type_{}.png".format(focus, random_seed, type))
     plt.show()
 
 
@@ -77,5 +80,5 @@ def draw_loss_plot(plot_info, dipoles_num, focus):
     plt.title('fitness function plot for generating lens with focus: {}\n total dipoles num: {}'.format(focus, dipoles_num))
     plt.xlabel('epoch')
     plt.ylabel('score')
-    plt.savefig("plot_{}.png".format(focus))
+    plt.savefig("plot_pic/plot_{}.png".format(focus))
     plt.show()

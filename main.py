@@ -82,12 +82,12 @@ def main(new_focus, random_seed):
     draw_points(get_points(current_subject), expecting, it, random_seed, sum(current_subject.nums))
     X = np.arange(-2000, 2100, 100)
     Z = np.arange(1000, 10100, 100)
-    # draw_loss_plot(plot_info, total_calc_number, expecting)
+    draw_loss_plot(plot_info, total_calc_number, expecting)
     print("drawing colormap")
     intensity_e, intensity_m, intensity = calc(current_subject, X, Y, Z, True)
-    draw_colormap(-2000, 2000, 1000, 10000, intensity_e, "electric", expecting)
-    draw_colormap(-2000, 2000, 1000, 10000, intensity_m, "magnetic", expecting)
-    draw_colormap(-2000, 2000, 1000, 10000, intensity, "summary", expecting)
+    draw_colormap(-2, 2, 1, 10, intensity_e, "electric", expecting, random_seed)
+    draw_colormap(-2, 2, 1, 10, intensity_m, "magnetic", expecting, random_seed)
+    draw_colormap(-2, 2, 1, 10, intensity, "summary", expecting, random_seed)
     return current_subject
 
 
@@ -199,16 +199,27 @@ def kek():
     X = np.arange(-2000, 2100, 100)
     Z = np.arange(1000, 10100, 100)
     intensity_e, intensity_m, intensity = calc(lens, X, Y, Z, True)
-    draw_colormap(-2000, 2000, 1000, 10000, intensity_e, "electric", lens.focus_e)
-    draw_colormap(-2000, 2000, 1000, 10000, intensity_m, "magnetic", lens.focus_m)
-    draw_colormap(-2000, 2000, 1000, 10000, intensity, "summary", lens.focus)
+    draw_colormap(-2, 2, 1, 10, intensity_e, "electric", lens.focus_e, 0)
+    draw_colormap(-2, 2, 1, 10, intensity_m, "magnetic", lens.focus_m, 0)
+    draw_colormap(-2, 2, 1, 10, intensity, "summary", lens.focus, 0)
+
+
+def draw_heatmaps(lens: Metalens):
+    X = np.arange(-2000, 2100, 100)
+    Z = np.arange(1000, 10100, 100)
+    Y = np.array([0])
+    intensity_e, intensity_m, intensity = calc(lens, X, Y, Z, True)
+    draw_colormap(-2, 2, 1, 10, intensity_e, "electric", lens.focus, lens.random_seed)
+    draw_colormap(-2, 2, 1, 10, intensity_m, "magnetic", lens.focus, lens.random_seed)
+    draw_colormap(-2, 2, 1, 10, intensity, "summary", lens.focus, lens.random_seed)
 
 
 if __name__ == '__main__':
-    kek()
+    # kek()
     # np.random.seed(322)
-    # for i in range(3000, 4000, 100):
-    #     print("building lens with focus (0, {})".format(i))
-    #     start_time = time.time()
-    #     main(i, 322)
-    #     print(time.time() - start_time)
+    for i in range(325, 333, 1):
+        np.random.seed(i)
+        print("building lens with focus (0, {})".format(i))
+        start_time = time.time()
+        main(6000, i)
+        print(time.time() - start_time)
